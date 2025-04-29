@@ -1,0 +1,30 @@
+# Core FastAPI
+fastapi
+uvicorn[standard]
+python-dotenv
+
+# LangChain Core & Azure AI Integration
+langchain-core
+langchain-community
+langchain-openai
+langgraph
+
+# Azure AI
+azure-identity
+azure-ai-inference
+
+# Pydantic
+pydantic
+pydantic-settings
+
+# Agent Tools
+sympy
+scipy
+pint
+
+# Testing
+pytest
+httpx
+
+# Optional
+openai
