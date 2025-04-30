@@ -18,7 +18,7 @@ This project was developed as part of the [Microsoft AI Agents Hackathon 2025](h
 
 ## 🎥 Demo Video
 
-_Coming soon!_
+[Watch the STEMnity AI Demo](https://www.canva.com/design/DAGmEcjTR3Q/06fZpIyXkuvL3YydKkFmBA/watch?utm_content=DAGmEcjTR3Q&utm_campaign=designshare&utm_medium=link2&utm_source=uniquelinks&utlId=h151e718141)
 
 ---
 
