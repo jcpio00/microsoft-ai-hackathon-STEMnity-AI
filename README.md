@@ -99,10 +99,44 @@ pip install -r requirements.txt
 ```sh
 cd ../frontend
 npm install
-npm run dev
 ```
 
-- The app will be available at [http://localhost:5173](http://localhost:5173).
+- Create `.env.local` in the frontend directory with:
+
+  ```
+  VITE_API_BASE_URL=http://localhost:8000
+  ```
+
+- Start the frontend:
+  ```sh
+  npm run dev
+  ```
+
+## 🔒 Environment Configuration
+
+### Backend (.env)
+
+The backend requires a `.env` file in the `backend/` directory with the following variables:
+
+```
+GITHUB_PAT="your_github_pat_here"        # GitHub Personal Access Token for model access
+GITHUB_MODEL_ID="deepseek/DeepSeek-V3-0324"  # Model identifier
+```
+
+### Frontend (.env.local)
+
+The frontend needs a `.env.local` file in the `frontend/` directory:
+
+```
+VITE_API_BASE_URL=http://localhost:8000  # Backend API URL for development
+```
+
+**Note:** Both `.env` and `.env.local` files are excluded from version control for security. You'll need to create these files locally after cloning the repository.
+
+### Environment Variables Usage
+
+- Backend: Variables are loaded using python-dotenv and accessed through the config module
+- Frontend: Variables must be prefixed with `VITE_` and are accessed using `import.meta.env.VITE_VARIABLE_NAME`
 
 ---
 
