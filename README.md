@@ -3,8 +3,9 @@
 A conversational AI STEM tutor for K-12, built with FastAPI, React, and open-source LLMs. STEMnity AI can solve math and science problems, explain step-by-step reasoning, and use specialized tools for algebra, factoring, unit conversion, and physical constants—all with multi-turn memory and safe moderation.
 
 <p align="center">
-  <img src="docs/images/Stemnity-AI.PNG" alt="STEMnity AI Logo" width="200">
+  <img src="docs/images/Stemnity-AI.PNG" alt="STEMnity AI Logo" width="400">
 </p>
+
 ---
 
 ## 🚀 Project Goal
