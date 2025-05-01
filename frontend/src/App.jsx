@@ -6,28 +6,38 @@ import { MathJaxContext } from 'better-react-mathjax';
 import './App.css';
 import logo from '/logo.png'; // or '/logo.svg'
 
-// Optional: Configure MathJax 
+/**
+ * MathJax configuration for rendering LaTeX equations
+ * Can be customized for specific math rendering needs
+ */
 const mathJaxConfig = {
 
 };
 
+/**
+ * Main application component for STEMnity AI
+ * Handles chat interface, message history, and agent interactions
+ */
 function App() {
-  // Initial disclaimer message
+  // Initial welcome message shown to users
   const initialDisclaimer = {
     type: 'ai',
     text: "Hi! I'm an AI STEM tutor based on open-source models. I can help with problem-solving strategies in subjects like Algebra. Remember, I'm still learning, so please double-check my answers and use critical thinking! Let's focus on STEM topics."
   };
-  const [inputMessage, setInputMessage] = useState('');
-  const [chatHistory, setChatHistory] = useState([initialDisclaimer]);
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState(null);
-  const [threadId, setThreadId] = useState(null);
-  const [agentThoughts, setAgentThoughts] = useState('');
-  const [showThoughts, setShowThoughts] = useState(false);
-  const chatEndRef = useRef(null);
 
+  // State management for chat functionality
+  const [inputMessage, setInputMessage] = useState('');          // Current user input
+  const [chatHistory, setChatHistory] = useState([initialDisclaimer]); // Full conversation history
+  const [isLoading, setIsLoading] = useState(false);            // Loading state for API calls
+  const [error, setError] = useState(null);                     // Error handling state
+  const [threadId, setThreadId] = useState(null);               // Unique session identifier
+  const [agentThoughts, setAgentThoughts] = useState('');       // Agent's reasoning process
+  const [showThoughts, setShowThoughts] = useState(false);      // Toggle for showing agent thoughts
+  const chatEndRef = useRef(null);                             // Reference for auto-scrolling
+
+  // Initialize session and handle auto-scrolling
   useEffect(() => {
-    
+    // Create or retrieve session ID for conversation persistence
     let currentThreadId = localStorage.getItem('chatThreadId');
     if (!currentThreadId) {
       currentThreadId = `web-session-${uuidv4()}`; 
@@ -36,13 +46,19 @@ function App() {
     setThreadId(currentThreadId);
     console.log("Using Thread ID:", currentThreadId); // For debugging
 
+    // Auto-scroll to latest message
     chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [chatHistory]);
 
+  // Handle user input changes
   const handleInputChange = (event) => {
     setInputMessage(event.target.value);
   };
 
+  /**
+   * Handle form submission and message sending
+   * Manages the chat flow and API interaction
+   */
   const handleSubmit = async (event) => {
     event.preventDefault();
     if (!inputMessage.trim() || isLoading || !threadId) return;
@@ -51,14 +67,26 @@ function App() {
     console.log("Sending message:", userMessage);
     setInputMessage('');
     setError(null);
-    setChatHistory(prev => [...prev, { type: 'user', text: userMessage, timestamp: Date.now() }]);
+    
+    // Add user message to chat history with timestamp
+    setChatHistory(prev => [...prev, { 
+      type: 'user', 
+      text: userMessage, 
+      timestamp: Date.now() 
+    }]);
+    
     setIsLoading(true);
 
     try {
+      // Send message to backend and get AI response
       const { answer, thoughts } = await sendMessageToBackend(userMessage, threadId);
       console.log("Received reply:", answer);
-      setChatHistory(prev => [...prev, { type: 'ai', text: answer, timestamp: Date.now() }]);
-      setAgentThoughts(thoughts); // Save thoughts for display
+      setChatHistory(prev => [...prev, { 
+        type: 'ai', 
+        text: answer, 
+        timestamp: Date.now() 
+      }]);
+      setAgentThoughts(thoughts);
     } catch (err) {
       console.error("Failed to get reply:", err);
       const errorMessage = err.message || "Failed to connect to the AI. Please try again.";
@@ -68,18 +96,24 @@ function App() {
     }
   };
 
+  /**
+   * Format agent's reasoning steps for display
+   * Converts the agent's thought process into styled components
+   */
   function formatAgentThoughts(thoughts) {
     if (!thoughts) return <em>No reasoning steps available for this answer.</em>;
-    // Split by double newlines or single newlines for each step
+    
     const lines = thoughts.split('\n').filter(Boolean);
     return (
       <div className="reasoning-steps">
         {lines.map((line, idx) => {
+          // Classify each line of reasoning for appropriate styling
           let className = '';
           if (line.startsWith('Thought:')) className = 'reasoning-thought';
           else if (line.startsWith('Action:')) className = 'reasoning-action';
           else if (line.startsWith('Action Input:')) className = 'reasoning-action-input';
           else if (line.startsWith('Observation:')) className = 'reasoning-observation';
+          
           return (
             <div key={idx} className={className}>
               {line}

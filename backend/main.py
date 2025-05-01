@@ -1,52 +1,73 @@
+"""
+STEMnity AI Backend Server
+
+This is the main FastAPI application entry point that sets up:
+- API endpoints for the STEM tutoring service
+- CORS middleware for frontend communication
+- Configuration validation
+- Router integration
+"""
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.core import config
 from app.api import chat as chat_router
 
+# Initialize FastAPI with metadata
 app = FastAPI(
     title="STEMnity AI Backend",
-    description="API endpoints for the STEMnity agent.",
+    description="API endpoints for the STEMnity AI STEM tutoring service.",
     version="0.1.0",
-   
 )
 
-# --- CORS Middleware --- 
-# Adjust origins as needed for your frontend setup
-# Allows all origins for development, restrict in production!
+# --- CORS Configuration ---
+# Security Note: In production, replace with specific origin URLs
+# Development allows all origins for easy local testing
 origins = [
     "http://localhost",
-    "http://localhost:5173", # Default Vite dev port
+    "http://localhost:5173",  # Default Vite dev server port
     "http://127.0.0.1:5173",
-    # Add your deployed frontend URL here
+    # TODO: Add your production frontend URL here
 ]
 
+# Add CORS middleware to allow frontend communication
 app.add_middleware(
     CORSMiddleware,
     allow_origins=origins,
     allow_credentials=True,
-    allow_methods=["*"], # Allows all methods
-    allow_headers=["*"], # Allows all headers
+    allow_methods=["*"],  # Configure specific HTTP methods in production
+    allow_headers=["*"],  # Configure specific headers in production
 )
 
-
-# --- Placeholder Root Endpoint --- 
+# --- API Routes ---
 @app.get("/")
 async def read_root():
+    """Health check endpoint to verify API is running."""
     return {"message": "Welcome to the STEMnity AI Backend"}
 
-# --- Include Routers --- 
-# Placeholder: Include your API routers here
-# Include the chat router with a prefix
-app.include_router(chat_router.router, prefix="/api", tags=["Chat"]) # Add tags for Swagger UI
+# Mount the chat router with /api prefix
+app.include_router(
+    chat_router.router,
+    prefix="/api",
+    tags=["Chat"]  # Groups chat endpoints in Swagger UI
+)
 
-print(f"--- Backend Config ---")
+# --- Configuration Validation ---
+# Print startup configuration for debugging
+print("\n=== STEMnity AI Backend Configuration ===")
 print(f"Model ID: {config.GITHUB_MODEL_ID}")
-print(f"GitHub PAT Loaded: {'Yes' if config.GITHUB_PAT else 'NO! - Check backend/.env'}")
-print(f"----------------------")
-print("Chat API endpoint available at /api/chat")
+print(f"GitHub PAT Status: {'Configured' if config.GITHUB_PAT else 'Missing - Check backend/.env'}")
+print(f"API Documentation: http://localhost:8000/docs")
+print(f"Chat API Endpoint: http://localhost:8000/api/chat")
+print("=======================================\n")
 
-# If running directly using `python main.py` (for simple testing)
-# Use `uvicorn main:app --reload --host 0.0.0.0 --port 8000` for development
+# Development server configuration
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=8000) 
+    # Note: For development only. Use proper ASGI server in production.
+    uvicorn.run(
+        app,
+        host="0.0.0.0",
+        port=8000,
+        reload=True  # Enable auto-reload for development
+    ) 

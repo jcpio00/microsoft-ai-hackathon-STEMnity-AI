@@ -1,3 +1,14 @@
+"""
+Chat API Router
+
+This module handles the chat endpoint for the STEMnity AI tutor.
+It processes incoming messages through:
+1. Input validation
+2. Content moderation
+3. LangGraph agent processing
+4. Error handling and response formatting
+"""
+
 from fastapi import APIRouter, HTTPException, status, Body
 from app.models.chat_models import ChatMessage, ChatResponse
 from app.utils.moderation import is_content_safe, MODERATION_REJECTION_MESSAGE
@@ -6,16 +17,24 @@ from app.agent.tutor_agent import run_agent
 router = APIRouter()
 
 @router.post("/chat", response_model=ChatResponse)
-async def handle_chat(request_body: ChatMessage): # Use the new request body model
+async def handle_chat(request_body: ChatMessage):
     """
-    Receives a user message and session ID, performs moderation,
-    processes it using the LangChain agent with memory context,
-    and returns the final reply.
+    Process a chat message and return the AI tutor's response.
+
+    Args:
+        request_body (ChatMessage): Contains the user's message and optional session ID
+
+    Returns:
+        ChatResponse: The AI tutor's response and reasoning process
+
+    Raises:
+        HTTPException: For empty messages, moderation failures, or processing errors
     """
     user_message = request_body.message
     session_id = request_body.session_id
 
-    print(f"Received message for session '{session_id}': {user_message[:100]}...") # Log session ID
+    # Log incoming request for debugging
+    print(f"Processing message for session '{session_id}': {user_message[:100]}...")
 
     # --- 1. Input Validation ---
     if not user_message:
@@ -24,41 +43,47 @@ async def handle_chat(request_body: ChatMessage): # Use the new request body mod
             detail="Message cannot be empty."
         )
 
-    # --- 2. Moderation Check ---
-    # Use is_content_safe (or your function name like is_content_appropriate)
+    # --- 2. Content Moderation ---
     if not is_content_safe(user_message):
-        print(f"Moderation failed for session '{session_id}'.")
-        # Return the standard rejection message without calling the agent
-        # Ensure MODERATION_REJECTION_MESSAGE is defined in your moderation utils
-        return ChatResponse(reply=MODERATION_REJECTION_MESSAGE)
-    print(f"Moderation passed for session '{session_id}'.")
+        print(f"Moderation failed for session '{session_id}' - Inappropriate content detected")
+        return ChatResponse(
+            answer=MODERATION_REJECTION_MESSAGE,
+            thoughts="Message rejected by content moderation"
+        )
+    print(f"Moderation passed for session '{session_id}'")
 
-    # --- 3. Session ID Handling (Optional but Recommended) ---
+    # --- 3. Session Management ---
     if not session_id:
-        
-        print(f"Warning: No session_id provided for message: {user_message[:50]}... Memory will not persist across requests.")
-        # Let run_agent handle None session_id if it's designed to
+        print(f"Warning: No session_id provided - Memory persistence disabled")
+        # Agent will handle None session_id with default memory
 
-    # --- 4. Call the Agent ---
+    # --- 4. Agent Processing ---
     try:
-        # Pass both message and session_id to the agent runner
-        agent_reply = await run_agent(user_message, session_id) # Pass session_id
-        print(f"Sending agent reply for session '{session_id}': {agent_reply.get('answer', '')[:100]}...")
-        return ChatResponse(answer=agent_reply.get('answer', ''), thoughts=agent_reply.get('thoughts', ''))
+        # Process message through LangGraph agent
+        agent_reply = await run_agent(user_message, session_id)
+        
+        # Log successful response
+        print(f"Generated response for session '{session_id}': {agent_reply.get('answer', '')[:100]}...")
+        
+        return ChatResponse(
+            answer=agent_reply.get('answer', ''),
+            thoughts=agent_reply.get('thoughts', '')
+        )
 
-    # --- 5. Error Handling ---
     except HTTPException as http_exc:
-        # Re-raise specific HTTPExceptions if needed (e.g., from deeper layers)
-        print(f"HTTPException caught in /chat for session '{session_id}': {http_exc.detail}")
+        # Re-raise API-specific exceptions with details
+        print(f"HTTP error in chat handler: {http_exc.detail}")
         raise http_exc
+        
     except Exception as e:
-        # Catch any other unexpected errors during agent processing
-        # Log the full error for debugging
+        # Log unexpected errors and return safe error message
         import traceback
-        print(f"Unexpected error in /chat endpoint for session '{session_id}': {e}\n{traceback.format_exc()}")
-        # Return a generic server error to the client
+        print(f"Unexpected error processing message:")
+        print(f"Session: {session_id}")
+        print(f"Error: {str(e)}")
+        print(f"Trace:\n{traceback.format_exc()}")
+        
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="An unexpected server error occurred while processing your request."
-            # Avoid sending detailed internal errors like the exception 'e' back to the client
+            detail="An unexpected error occurred while processing your request."
         )
